@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html>
 <body>
-
-
 <h1>Aktiviteter</h1>
 
 {% if message %}
@@ -16,57 +14,45 @@
 <form method="post" action="/ui/activities">
     <p>
         Användare:
-        <select name="user_id" required>
+        <select name="user_id">
             {% for u in users %}
-            <option value="{{ u.id }}"
-                {% if selected_user_id == u.id %}selected{% endif %}>
-                {{ u.name }}
-            </option>
+            <option value="{{ u.id }}">{{ u.name }}</option>
             {% endfor %}
         </select>
     </p>
 
-    <p>Category: <input name="category" required></p>
-    <p>Key: <input name="key" required></p>
-    <p>Amount: <input name="amount" type="number" step="0.01" min="0.01" required></p>
-    <p>Date: <input name="date" type="date" required></p>
+    <p>Category: <input name="category"></p>
+    <p>Key: <input name="key"></p>
+    <p>Amount: <input name="amount" type="number" step="0.01"></p>
+    <p>Date: <input name="date" type="date"></p>
 
-    <button type="submit">Spara aktivitet</button>
+    <button type="submit">Spara</button>
 </form>
 
-<h2>Sparade aktiviteter</h2>
+<h2>Aktiviteter</h2>
 
 <table border="1">
-    <tr>
-        <th>ID</th>
-        <th>User ID</th>
-        <th>Category</th>
-        <th>Key</th>
-        <th>Amount</th>
-        <th>Date</th>
-        <th>CO₂e</th>
-    </tr>
+<tr>
+    <th>ID</th>
+    <th>User</th>
+    <th>Category</th>
+    <th>Key</th>
+    <th>Amount</th>
+    <th>Date</th>
+</tr>
 
-    {% for row in rows %}
-    <tr>
-        <td>{{ row.activity.id }}</td>
-        <td>{{ row.activity.user_id }}</td>
-        <td>{{ row.activity.category }}</td>
-        <td>{{ row.activity.key }}</td>
-        <td>{{ row.activity.amount }}</td>
-        <td>{{ row.activity.date }}</td>
-        <td>
-            {% if row.co2e is not none %}
-                {{ row.co2e }}
-            {% else %}
-                Ingen faktor
-            {% endif %}
-        </td>
-    </tr>
-    {% endfor %}
+{% for a in activities %}
+<tr>
+    <td>{{ a.id }}</td>
+    <td>{{ a.user_id }}</td>
+    <td>{{ a.category }}</td>
+    <td>{{ a.key }}</td>
+    <td>{{ a.amount }}</td>
+    <td>{{ a.date }}</td>
+</tr>
+{% endfor %}
 </table>
 
-<p><a href="/ui">← Tillbaka</a></p>
-
+<p><a href="/ui">Tillbaka</a></p>
 </body>
 </html>
