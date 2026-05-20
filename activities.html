@@ -39,6 +39,7 @@
     <p>
         <label>Amount:</label>
         <input name="amount" type="number" step="0.01" min="0.01" required>
+        <span id="unitText"></span>
     </p>
 
     <p>
@@ -87,6 +88,7 @@
 
     const categorySelect = document.getElementById("categorySelect");
     const keySelect = document.getElementById("keySelect");
+    const unitText = document.getElementById("unitText");
 
     const categories = [...new Set(factors.map(f => f.category))];
 
@@ -98,18 +100,38 @@
     });
 
     categorySelect.addEventListener("change", function () {
-        keySelect.innerHTML = '<option value="">Välj key</option>';
-
         const selectedCategory = categorySelect.value;
+
+        keySelect.innerHTML = '<option value="">Välj key</option>';
+        unitText.textContent = "";
 
         const matchingFactors = factors.filter(f => f.category === selectedCategory);
 
         matchingFactors.forEach(factor => {
             const option = document.createElement("option");
             option.value = factor.key;
-            option.textContent = `${factor.key} (${factor.unit}, ${factor.co2e} kg CO₂e/unit)`;
+            option.textContent = factor.key;
             keySelect.appendChild(option);
         });
+
+        if (matchingFactors.length > 0) {
+            unitText.textContent = matchingFactors[0].unit;
+        }
+    });
+
+    keySelect.addEventListener("change", function () {
+        const selectedCategory = categorySelect.value;
+        const selectedKey = keySelect.value;
+
+        const selectedFactor = factors.find(f =>
+            f.category === selectedCategory && f.key === selectedKey
+        );
+
+        if (selectedFactor) {
+            unitText.textContent = selectedFactor.unit;
+        } else {
+            unitText.textContent = "";
+        }
     });
 </script>
 
