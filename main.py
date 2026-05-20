@@ -344,7 +344,35 @@ def ui_activities(
             "error": None,
         },
     )
+@app.get("/ui/activities", response_class=HTMLResponse)
+def ui_activities(
+    request: Request,
+    user_id: int | None = None,
+    db: Session = Depends(get_session),
+):
+    users = db.execute(select(User)).scalars().all()
 
+    stmt = select(Activity)
+
+    if user_id is not None:
+        stmt = stmt.where(Activity.user_id == user_id)
+
+    activities = list(db.execute(stmt).scalars().all())
+    rows = _activity_rows(db, activities)
+
+    return templates.TemplateResponse(
+        request,
+        "activities.html",
+        {
+            "request": request,
+            "users": users,
+            "activities": activities,   # gamla HTML funkar
+            "rows": rows,               # nya HTML funkar
+            "selected_user_id": user_id,
+            "message": None,
+            "error": None,
+        },
+    )
 
 @app.post("/ui/activities", response_class=HTMLResponse)
 def ui_create_activity(
@@ -361,13 +389,14 @@ def ui_create_activity(
     def render(error: str | None = None, message: str | None = None):
         activities = list(db.execute(select(Activity)).scalars().all())
         rows = _activity_rows(db, activities)
-
+    
         return templates.TemplateResponse(
             request,
             "activities.html",
             {
                 "request": request,
                 "users": users,
+                "activities": activities,
                 "rows": rows,
                 "selected_user_id": user_id,
                 "message": message,
