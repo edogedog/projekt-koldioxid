@@ -1,58 +1,116 @@
-<!DOCTYPE html>
-<html>
-<body>
+{% extends "base.html" %}
+
+{% block content %}
+
 <h1>Aktiviteter</h1>
 
 {% if message %}
-<p style="color: green;">{{ message }}</p>
+<p class="success">{{ message }}</p>
 {% endif %}
 
 {% if error %}
-<p style="color: red;">{{ error }}</p>
+<p class="error">{{ error }}</p>
 {% endif %}
 
 <form method="post" action="/ui/activities">
     <p>
-        Användare:
-        <select name="user_id">
+        <label>Användare:</label>
+        <select name="user_id" required>
             {% for u in users %}
             <option value="{{ u.id }}">{{ u.name }}</option>
             {% endfor %}
         </select>
     </p>
 
-    <p>Category: <input name="category"></p>
-    <p>Key: <input name="key"></p>
-    <p>Amount: <input name="amount" type="number" step="0.01"></p>
-    <p>Date: <input name="date" type="date"></p>
+    <p>
+        <label>Category:</label>
+        <select name="category" id="categorySelect" required>
+            <option value="">Välj category</option>
+        </select>
+    </p>
+
+    <p>
+        <label>Key:</label>
+        <select name="key" id="keySelect" required>
+            <option value="">Välj key</option>
+        </select>
+    </p>
+
+    <p>
+        <label>Amount:</label>
+        <input name="amount" type="number" step="0.01" min="0.01" required>
+    </p>
+
+    <p>
+        <label>Date:</label>
+        <input name="date" type="date" required>
+    </p>
 
     <button type="submit">Spara</button>
 </form>
 
 <h2>Aktiviteter</h2>
 
-<table border="1">
-<tr>
-    <th>ID</th>
-    <th>User</th>
-    <th>Category</th>
-    <th>Key</th>
-    <th>Amount</th>
-    <th>Date</th>
-</tr>
+<table>
+    <tr>
+        <th>ID</th>
+        <th>User</th>
+        <th>Category</th>
+        <th>Key</th>
+        <th>Amount</th>
+        <th>Date</th>
+    </tr>
 
-{% for a in activities %}
-<tr>
-    <td>{{ a.id }}</td>
-    <td>{{ a.user_id }}</td>
-    <td>{{ a.category }}</td>
-    <td>{{ a.key }}</td>
-    <td>{{ a.amount }}</td>
-    <td>{{ a.date }}</td>
-</tr>
-{% endfor %}
+    {% for a in activities %}
+    <tr>
+        <td>{{ a.id }}</td>
+        <td>{{ a.user_id }}</td>
+        <td>{{ a.category }}</td>
+        <td>{{ a.key }}</td>
+        <td>{{ a.amount }}</td>
+        <td>{{ a.date }}</td>
+    </tr>
+    {% endfor %}
 </table>
 
-<p><a href="/ui">Tillbaka</a></p>
-</body>
-</html>
+<script>
+    const factors = [
+        {% for f in factors %}
+        {
+            category: "{{ f.category }}",
+            key: "{{ f.key }}",
+            unit: "{{ f.unit }}",
+            co2e: "{{ f.co2e_per_unit }}"
+        },
+        {% endfor %}
+    ];
+
+    const categorySelect = document.getElementById("categorySelect");
+    const keySelect = document.getElementById("keySelect");
+
+    const categories = [...new Set(factors.map(f => f.category))];
+
+    categories.forEach(category => {
+        const option = document.createElement("option");
+        option.value = category;
+        option.textContent = category;
+        categorySelect.appendChild(option);
+    });
+
+    categorySelect.addEventListener("change", function () {
+        keySelect.innerHTML = '<option value="">Välj key</option>';
+
+        const selectedCategory = categorySelect.value;
+
+        const matchingFactors = factors.filter(f => f.category === selectedCategory);
+
+        matchingFactors.forEach(factor => {
+            const option = document.createElement("option");
+            option.value = factor.key;
+            option.textContent = `${factor.key} (${factor.unit}, ${factor.co2e} kg CO₂e/unit)`;
+            keySelect.appendChild(option);
+        });
+    });
+</script>
+
+{% endblock %}
