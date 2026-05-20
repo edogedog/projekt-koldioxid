@@ -1,36 +1,74 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+<body>
 
-{% block content %}
 
 <h1>Veckorapport</h1>
 
 <form method="get" action="/ui/reports/weekly">
+    <p>
+        Användare:
+        <select name="user_id" required>
+            {% for user in users %}
+            <option value="{{ user.id }}"
+                {% if selected_user_id == user.id %}selected{% endif %}>
+                {{ user.name }}
+            </option>
+            {% endfor %}
+        </select>
+    </p>
 
-    <label for="user_id">Användare:</label>
-    <select name="user_id" id="user_id" required>
-        {% for user in users %}
-        <option value="{{ user.id }}">
-            {{ user.name }}
-        </option>
-        {% endfor %}
-    </select>
-
-    <label for="week_start">Veckostart (måndag):</label>
-    <input type="date" name="week_start" id="week_start" required>
+    <p>
+        Veckostart:
+        <input type="date" name="week_start" value="{{ week_start or '' }}" required>
+    </p>
 
     <button type="submit">Visa rapport</button>
-
 </form>
 
 {% if err %}
-<p class="error">{{ err }}</p>
+<p style="color: red;">{{ err }}</p>
 {% endif %}
 
 {% if total is not none %}
-<div class="report-box">
-    <h2>Resultat</h2>
-    <p>Total CO₂e för veckan: <strong>{{ total }}</strong> kg</p>
-</div>
+<h2>Total CO₂e: {{ total }}</h2>
+
+{% if week_end %}
+<p>Vecka: {{ week_start }} till {{ week_end }}</p>
 {% endif %}
 
-{% endblock %}
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>User ID</th>
+        <th>Category</th>
+        <th>Key</th>
+        <th>Amount</th>
+        <th>Date</th>
+        <th>CO₂e</th>
+    </tr>
+
+    {% for row in rows %}
+    <tr>
+        <td>{{ row.activity.id }}</td>
+        <td>{{ row.activity.user_id }}</td>
+        <td>{{ row.activity.category }}</td>
+        <td>{{ row.activity.key }}</td>
+        <td>{{ row.activity.amount }}</td>
+        <td>{{ row.activity.date }}</td>
+        <td>
+            {% if row.co2e is not none %}
+                {{ row.co2e }}
+            {% else %}
+                Ingen faktor
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+<p><a href="/ui">← Tillbaka</a></p>
+
+</body>
+</html>
