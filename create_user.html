@@ -1,45 +1,56 @@
 <!DOCTYPE html>
-<html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>Användare</title>
+</head>
 <body>
-<h1>Användare</h1>
 
-{% if message %}
-<p style="color: green;">{{ message }}</p>
-{% endif %}
+    <h1>Användare</h1>
 
-{% if error %}
-<p style="color: red;">{{ error }}</p>
-{% endif %}
+    {% if message %}
+    <p style="color: green;">{{ message }}</p>
+    {% endif %}
 
-<h2>Skapa användare</h2>
-<form method="post" action="/ui/users" autocomplete="off">
-  <input type="text" name="name" autocomplete ="off">
-  <button type="submit">Skapa</button>
-</form>
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
+    {% endif %}
 
-<h2>Befintliga användare</h2>
-<table border="1" cellpadding="6" cellspacing="0">
-<tr>
-  <th>ID</th>
-  <th>Namn</th>
-  <th>Åtgärd</th>
-</tr>
+    <!-- skapa users -->
+    <h2>Skapa användare</h2>
 
-{% for u in users %}
-<tr>
-  <td>{{ u.id }}</td>
-  <td>{{ u.name }}</td>
-  <td>
-    <form method="post" action="/ui/users/{{ u.id }}/delete">
-      <button type="submit">
-        Ta bort
-      </button>
+    <form method="post" action="/ui/users">
+        <input type="text" name="name" placeholder="Namn">
+        <button type="submit">Skapa</button>
     </form>
-  </td>
-</tr>
-{% endfor %}
-</table>
 
-<p><a href="/ui">← Tillbaka</a></p>
+    <hr>
+
+    <!-- lista users -->
+    <h2>Befintliga användare</h2>
+
+    <table border="1" cellpadding="6" cellspacing="0">
+        <tr>
+            <th>ID</th>
+            <th>Namn</th>
+            <th>Åtgärd</th>
+        </tr>
+
+        {% for u in users %}
+        <tr>
+            <td>{{ u.id }}</td>
+            <td>{{ u.name }}</td>
+            <td>
+                <form method="post" action="/ui/users/{{ u.id }}/delete">
+                    <button type="submit"
+                            onclick="return confirm('Ta bort användaren {{ u.name }}?');">
+                        Ta bort
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+<p><a href="/ui">Tillbaka</a></p>
 </body>
 </html>
