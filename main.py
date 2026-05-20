@@ -295,3 +295,60 @@ def ui_create_activity(
             "activities": activities,
         }
     )
+# Weekly code
+@app.get("/ui/reports/weekly", response_class=HTMLResponse)
+def ui_weekly_report(
+    request: Request,
+    user_id: int | None = None,
+    week_start: str | None = None,
+    db: Session = Depends(get_session),
+):
+
+    tpl = templates.get_template("weekly.html")
+
+    users = db.query(User).all()
+
+    total = None
+    err = None
+
+    if user_id and week_start:
+
+        try:
+            start = dt.date.fromisoformat(week_start)
+            end = start + dt.timedelta(days=6)
+
+        except ValueError:
+            err = "Fel datumformat"
+
+        else:
+
+            activities = (
+                db.query(Activity)
+                .filter(Activity.user_id == user_id)
+                .filter(Activity.date >= start)
+                .filter(Activity.date <= end)
+                .all()
+            )
+
+            total = 0
+
+            for activity in activities:
+
+                factor = (
+                    db.query(EmissionFactor)
+                    .filter(EmissionFactor.category == activity.category)
+                    .filter(EmissionFactor.key == activity.key)
+                    .first()
+                )
+
+                if factor:
+                    total += activity.amount * factor.co2e_per_unit
+
+    html = tpl.render({
+        "request": request,
+        "users": users,
+        "total": total,
+        "err": err
+    })
+
+    return HTMLResponse(html)
