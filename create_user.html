@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h1>Användare</h1>
+
+{% if message %}
+<p style="color: green;">{{ message }}</p>
+{% endif %}
+
+{% if error %}
+<p style="color: red;">{{ error }}</p>
+{% endif %}
+
+<h2>Skapa användare</h2>
+<form method="post" action="/ui/users" autocomplete="off">
+  <input type="text" name="name" autocomplete ="off">
+  <button type="submit">Skapa</button>
+</form>
+
+<h2>Befintliga användare</h2>
+<table border="1" cellpadding="6" cellspacing="0">
+<tr>
+  <th>ID</th>
+  <th>Namn</th>
+  <th>Åtgärd</th>
+</tr>
+
+{% for u in users %}
+<tr>
+  <td>{{ u.id }}</td>
+  <td>{{ u.name }}</td>
+  <td>
+    <form method="post" action="/ui/users/{{ u.id }}/delete">
+      <button type="submit">
+        Ta bort
+      </button>
+    </form>
+  </td>
+</tr>
+{% endfor %}
+</table>
+
+<p><a href="/ui">← Tillbaka</a></p>
+</body>
+</html>
