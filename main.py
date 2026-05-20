@@ -259,6 +259,7 @@ def ui_delete_user(
 def ui_activities(request: Request, db: Session = Depends(get_session)):
     users = db.execute(select(User)).scalars().all()
     activities = db.execute(select(Activity)).scalars().all()
+    factors = db.execute(select(EmissionFactor)).scalars().all()
 
     return templates.TemplateResponse(
         request,
@@ -266,9 +267,11 @@ def ui_activities(request: Request, db: Session = Depends(get_session)):
         {
             "users": users,
             "activities": activities,
+            "factors": factors,
+            "message": None,
+            "error": None,
         }
     )
-
 
 @app.post("/ui/activities", response_class=HTMLResponse)
 def ui_create_activity(
@@ -280,6 +283,30 @@ def ui_create_activity(
     date: str = Form(...),
     db: Session = Depends(get_session),
 ):
+    users = db.execute(select(User)).scalars().all()
+    factors = db.execute(select(EmissionFactor)).scalars().all()
+
+    factor = (
+        db.query(EmissionFactor)
+        .filter(EmissionFactor.category == category)
+        .filter(EmissionFactor.key == key)
+        .first()
+    )
+
+    if not factor:
+        activities = db.execute(select(Activity)).scalars().all()
+        return templates.TemplateResponse(
+            request,
+            "activities.html",
+            {
+                "users": users,
+                "activities": activities,
+                "factors": factors,
+                "message": None,
+                "error": "Ogiltig kombination av category och key.",
+            }
+        )
+
     activity = Activity(
         user_id=user_id,
         category=category,
@@ -291,7 +318,6 @@ def ui_create_activity(
     db.add(activity)
     db.commit()
 
-    users = db.execute(select(User)).scalars().all()
     activities = db.execute(select(Activity)).scalars().all()
 
     return templates.TemplateResponse(
@@ -300,9 +326,11 @@ def ui_create_activity(
         {
             "users": users,
             "activities": activities,
+            "factors": factors,
+            "message": "Aktivitet sparad!",
+            "error": None,
         }
     )
-
 @app.get("/ui/reports/weekly", response_class=HTMLResponse)
 def ui_weekly_report(
     request: Request,
@@ -350,6 +378,8 @@ def ui_weekly_report(
 
                 if factor:
                     total += activity.amount * factor.co2e_per_unit
+                else:
+                    total += 0
 
     html = tpl.render({
         "request": request,
