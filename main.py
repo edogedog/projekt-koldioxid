@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 import datetime as dt
-from typing import Dict, Tuple
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Query, Request
-
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.db import Base
 
 from .db import get_session
 from .models import Activity, EmissionFactor, User
@@ -23,7 +20,8 @@ from .schemas import (
 )
 from .services.emissions import Factor, FactorMap, calculate_co2e
 
-app = FastAPI(title="Hållbarhetskollen API (starter)")
+
+app = FastAPI(title="Hållbarhetskollen API")
 templates = Jinja2Templates(directory="templates")
 
 
@@ -31,6 +29,47 @@ templates = Jinja2Templates(directory="templates")
 def health() -> dict:
     return {"status": "ok"}
 
+
+
+
+def _load_factor_map(db: Session) -> FactorMap:
+    factors = db.execute(select(EmissionFactor)).scalars().all()
+    mapping: FactorMap = {}
+
+    for f in factors:
+        mapping[(f.category, f.key)] = Factor(
+            category=f.category,
+            key=f.key,
+            unit=f.unit,
+            co2e_per_unit=f.co2e_per_unit,
+        )
+
+    return mapping
+
+
+def _activity_rows(db: Session, activities: list[Activity]) -> list[dict]:
+    factors = _load_factor_map(db)
+    rows = []
+
+    for a in activities:
+        try:
+            co2e = calculate_co2e(a.category, a.key, a.amount, factors)
+        except KeyError:
+            co2e = None
+
+        rows.append({
+            "activity": a,
+            "co2e": co2e,
+        })
+
+    return rows
+
+
+def _week_bounds(week_start: dt.date) -> tuple[dt.date, dt.date]:
+    return week_start, week_start + dt.timedelta(days=6)
+
+
+#api grejr
 
 @app.post("/users", response_model=UserOut)
 def create_user(payload: UserCreate, db: Session = Depends(get_session)) -> User:
@@ -46,22 +85,22 @@ def list_users(db: Session = Depends(get_session)) -> list[User]:
     return list(db.execute(select(User)).scalars().all())
 
 
-def _load_factor_map(db: Session) -> FactorMap:
-    factors = db.execute(select(EmissionFactor)).scalars().all()
-    mapping: FactorMap = {}
-    for f in factors:
-        mapping[(f.category, f.key)] = Factor(category=f.category, key=f.key, unit=f.unit, co2e_per_unit=f.co2e_per_unit)
-    return mapping
-
+#api emissions faktorer
 
 @app.get("/emission-factors", response_model=list[EmissionFactorOut])
 def list_factors(db: Session = Depends(get_session)) -> list[EmissionFactor]:
     return list(db.execute(select(EmissionFactor)).scalars().all())
 
 
+#api activiteter
+
 @app.post("/activities", response_model=ActivityOut)
-def create_activity(payload: ActivityCreate, db: Session = Depends(get_session)) -> ActivityOut:
+def create_activity(
+    payload: ActivityCreate,
+    db: Session = Depends(get_session),
+) -> ActivityOut:
     user = db.get(User, payload.user_id)
+
     if not user:
         raise HTTPException(status_code=404, detail="user not found")
 
@@ -72,15 +111,22 @@ def create_activity(payload: ActivityCreate, db: Session = Depends(get_session))
         amount=payload.amount,
         date=payload.date,
     )
+
     db.add(activity)
     db.commit()
     db.refresh(activity)
 
     factors = _load_factor_map(db)
+
     try:
-        co2e = calculate_co2e(activity.category, activity.key, activity.amount, factors)
+        co2e = calculate_co2e(
+            activity.category,
+            activity.key,
+            activity.amount,
+            factors,
+        )
     except KeyError:
-        co2e = None  # För starter: ok att returnera None; i projektet bör ni hantera detta bättre.
+        co2e = None
 
     return ActivityOut(
         id=activity.id,
@@ -99,19 +145,22 @@ def list_activities(
     db: Session = Depends(get_session),
 ) -> list[ActivityOut]:
     stmt = select(Activity)
+
     if user_id is not None:
         stmt = stmt.where(Activity.user_id == user_id)
 
     activities = list(db.execute(stmt).scalars().all())
     factors = _load_factor_map(db)
 
-    out: list[ActivityOut] = []
+    output = []
+
     for a in activities:
         try:
             co2e = calculate_co2e(a.category, a.key, a.amount, factors)
         except KeyError:
             co2e = None
-        out.append(
+
+        output.append(
             ActivityOut(
                 id=a.id,
                 user_id=a.user_id,
@@ -122,53 +171,63 @@ def list_activities(
                 co2e=co2e,
             )
         )
-    return out
+
+    return output
 
 
-def _week_bounds(week_start: dt.date) -> tuple[dt.date, dt.date]:
-    # week_start antas vara måndag; i projektet kan ni validera/normalisera.
-    return week_start, week_start + dt.timedelta(days=6)
-
+#api weekly report
 
 @app.get("/reports/weekly", response_model=WeeklyReportOut)
 def weekly_report(
     user_id: int = Query(...),
-    week_start: dt.date = Query(..., description="Veckans startdatum (måndag)"),
+    week_start: dt.date = Query(...),
     db: Session = Depends(get_session),
 ) -> WeeklyReportOut:
     user = db.get(User, user_id)
+
     if not user:
         raise HTTPException(status_code=404, detail="user not found")
 
     start, end = _week_bounds(week_start)
 
-    stmt = (
-        select(Activity)
-        .where(Activity.user_id == user_id)
-        .where(Activity.date >= start)
-        .where(Activity.date <= end)
+    activities = list(
+        db.execute(
+            select(Activity)
+            .where(Activity.user_id == user_id)
+            .where(Activity.date >= start)
+            .where(Activity.date <= end)
+        ).scalars().all()
     )
-    activities = list(db.execute(stmt).scalars().all())
-    factors = _load_factor_map(db)
 
+    factors = _load_factor_map(db)
     total = 0.0
+
     for a in activities:
         try:
             total += calculate_co2e(a.category, a.key, a.amount, factors)
         except KeyError:
-            # I projektet: bestäm hur “okända faktorer” ska hanteras
             continue
 
-    return WeeklyReportOut(user_id=user_id, week_start=start, week_end=end, total_co2e=total)
-#roliga grejer
+    return WeeklyReportOut(
+        user_id=user_id,
+        week_start=start,
+        week_end=end,
+        total_co2e=total,
+    )
+
+
+#ui startsida
+
 @app.get("/ui", response_class=HTMLResponse)
 def ui_home(request: Request):
     return templates.TemplateResponse(
         request,
         "index.html",
-        {"request": request}
+        {"request": request},
     )
 
+
+#ui users
 
 @app.get("/ui/users", response_class=HTMLResponse)
 def ui_users(request: Request, db: Session = Depends(get_session)):
@@ -182,7 +241,7 @@ def ui_users(request: Request, db: Session = Depends(get_session)):
             "users": users,
             "message": None,
             "error": None,
-        }
+        },
     )
 
 
@@ -203,10 +262,11 @@ def ui_create_user(
                 "users": users,
                 "message": None,
                 "error": "Name får inte vara tomt.",
-            }
+            },
         )
 
-    db.add(User(name=name.strip()))
+    user = User(name=name.strip())
+    db.add(user)
     db.commit()
 
     users = db.execute(select(User)).scalars().all()
@@ -219,7 +279,7 @@ def ui_create_user(
             "users": users,
             "message": "User skapad",
             "error": None,
-        }
+        },
     )
 
 
@@ -234,6 +294,11 @@ def ui_delete_user(
     if user:
         db.delete(user)
         db.commit()
+        message = "User borttagen"
+        error = None
+    else:
+        message = None
+        error = "User finns inte."
 
     users = db.execute(select(User)).scalars().all()
 
@@ -243,23 +308,41 @@ def ui_delete_user(
         {
             "request": request,
             "users": users,
-            "message": "User borttagen",
-            "error": None,
-        }
+            "message": message,
+            "error": error,
+        },
     )
+
+
 #activities grejer
+
 @app.get("/ui/activities", response_class=HTMLResponse)
-def ui_activities(request: Request, db: Session = Depends(get_session)):
+def ui_activities(
+    request: Request,
+    user_id: int | None = None,
+    db: Session = Depends(get_session),
+):
     users = db.execute(select(User)).scalars().all()
-    activities = db.execute(select(Activity)).scalars().all()
+
+    stmt = select(Activity)
+
+    if user_id is not None:
+        stmt = stmt.where(Activity.user_id == user_id)
+
+    activities = list(db.execute(stmt).scalars().all())
+    rows = _activity_rows(db, activities)
 
     return templates.TemplateResponse(
         request,
         "activities.html",
         {
+            "request": request,
             "users": users,
-            "activities": activities,
-        }
+            "rows": rows,
+            "selected_user_id": user_id,
+            "message": None,
+            "error": None,
+        },
     )
 
 
@@ -273,29 +356,67 @@ def ui_create_activity(
     date: str = Form(...),
     db: Session = Depends(get_session),
 ):
+    users = db.execute(select(User)).scalars().all()
+
+    def render(error: str | None = None, message: str | None = None):
+        activities = list(db.execute(select(Activity)).scalars().all())
+        rows = _activity_rows(db, activities)
+
+        return templates.TemplateResponse(
+            request,
+            "activities.html",
+            {
+                "request": request,
+                "users": users,
+                "rows": rows,
+                "selected_user_id": user_id,
+                "message": message,
+                "error": error,
+            },
+        )
+
+    user = db.get(User, user_id)
+
+    if not user:
+        return render(error="Användaren finns inte.")
+
+    if not category or not category.strip():
+        return render(error="Category får inte vara tom.")
+
+    if not key or not key.strip():
+        return render(error="Key får inte vara tom.")
+
+    if amount <= 0:
+        return render(error="Amount måste vara större än 0.")
+
+    try:
+        parsed_date = dt.date.fromisoformat(date)
+    except ValueError:
+        return render(error="Fel datumformat.")
+
+    factors = _load_factor_map(db)
+    category_clean = category.strip()
+    key_clean = key.strip()
+
+    if (category_clean, key_clean) not in factors:
+        return render(error="Ingen emissionsfaktor finns för den category/key.")
+
     activity = Activity(
         user_id=user_id,
-        category=category,
-        key=key,
+        category=category_clean,
+        key=key_clean,
         amount=amount,
-        date=dt.date.fromisoformat(date),
+        date=parsed_date,
     )
 
     db.add(activity)
     db.commit()
 
-    users = db.execute(select(User)).scalars().all()
-    activities = db.execute(select(Activity)).scalars().all()
+    return render(message="Aktivitet sparad!")
 
-    return templates.TemplateResponse(
-        request,
-        "activities.html",
-        {
-            "users": users,
-            "activities": activities,
-        }
-    )
-# Weekly code
+
+#weekly report grejer
+
 @app.get("/ui/reports/weekly", response_class=HTMLResponse)
 def ui_weekly_report(
     request: Request,
@@ -303,52 +424,52 @@ def ui_weekly_report(
     week_start: str | None = None,
     db: Session = Depends(get_session),
 ):
-
-    tpl = templates.get_template("weekly.html")
-
-    users = db.query(User).all()
+    users = db.execute(select(User)).scalars().all()
 
     total = None
     err = None
+    rows = []
+    end = None
 
-    if user_id and week_start:
+    if user_id is not None and week_start:
+        user = db.get(User, user_id)
 
-        try:
-            start = dt.date.fromisoformat(week_start)
-            end = start + dt.timedelta(days=6)
-
-        except ValueError:
-            err = "Fel datumformat"
-
+        if not user:
+            err = "Användaren finns inte."
         else:
-
-            activities = (
-                db.query(Activity)
-                .filter(Activity.user_id == user_id)
-                .filter(Activity.date >= start)
-                .filter(Activity.date <= end)
-                .all()
-            )
-
-            total = 0
-
-            for activity in activities:
-
-                factor = (
-                    db.query(EmissionFactor)
-                    .filter(EmissionFactor.category == activity.category)
-                    .filter(EmissionFactor.key == activity.key)
-                    .first()
+            try:
+                start = dt.date.fromisoformat(week_start)
+                end = start + dt.timedelta(days=6)
+            except ValueError:
+                err = "Fel datumformat."
+            else:
+                activities = list(
+                    db.execute(
+                        select(Activity)
+                        .where(Activity.user_id == user_id)
+                        .where(Activity.date >= start)
+                        .where(Activity.date <= end)
+                    ).scalars().all()
                 )
 
-                if factor:
-                    total += activity.amount * factor.co2e_per_unit
+                rows = _activity_rows(db, activities)
+                total = 0.0
 
-    html = tpl.render({
-        "request": request,
-        "users": users,
-        "total": total,
-        "err": err
-    })
+                for row in rows:
+                    if row["co2e"] is not None:
+                        total += row["co2e"]
 
-    return HTMLResponse(html)
+    return templates.TemplateResponse(
+        request,
+        "weekly.html",
+        {
+            "request": request,
+            "users": users,
+            "selected_user_id": user_id,
+            "week_start": week_start,
+            "week_end": end,
+            "total": total,
+            "err": err,
+            "rows": rows,
+        },
+    )
