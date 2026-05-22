@@ -6,6 +6,8 @@ from typing import Dict, Tuple
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Form
+from fastapi.staticfiles import StaticFiles
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.db import Base
@@ -24,6 +26,7 @@ from .services.emissions import Factor, FactorMap, calculate_co2e
 app = FastAPI(title="Hållbarhetskollen API (starter)")
 #Skapa templates-objektet lab3
 templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/health")
 def health() -> dict:
