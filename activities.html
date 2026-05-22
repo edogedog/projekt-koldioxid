@@ -1,1 +1,63 @@
+{% extends "base.html" %}
 
+{% block title %}Activities{% endblock %}
+
+{% block content %}
+
+<h1>Aktiviteter</h1>
+
+{% if message %}
+<p style="color: green;">{{ message }}</p>
+{% endif %}
+
+{% if error %}
+<p style="color: red;">{{ error }}</p>
+{% endif %}
+
+<form method="post" action="/ui/activities">
+    <p>
+        Användare:
+        <select name="user_id">
+            {% for u in users %}
+            <option value="{{ u.id }}">{{ u.name }}</option>
+            {% endfor %}
+        </select>
+    </p>
+
+    <p>Category: <input name="category"></p>
+    <p>Key: <input name="key"></p>
+    <p>Amount: <input name="amount" type="number" step="0.01"></p>
+    <p>Date: <input name="date" type="date"></p>
+
+    <button type="submit" class="btn">Spara</button>
+	<table class="table">
+	<p class="message-success">
+</form>
+
+<h2>Aktiviteter</h2>
+
+<table border="1">
+<tr>
+    <th>ID</th>
+    <th>User</th>
+    <th>Category</th>
+    <th>Key</th>
+    <th>Amount</th>
+    <th>Date</th>
+</tr>
+
+{% for a in activities %}
+<tr>
+    <td>{{ a.id }}</td>
+    <td>{{ a.user_id }}</td>
+    <td>{{ a.category }}</td>
+    <td>{{ a.key }}</td>
+    <td>{{ a.amount }}</td>
+    <td>{{ a.date }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<p><a href="/ui" class="btn">Tillbaka</a></p>
+
+{% endblock %}
