@@ -1,27 +1,30 @@
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="UTF-8">
-    <title>Användare</title>
-</head>
-<body>
 
-    <h1>Användare</h1>
+{% extends "base.html" %}
 
-    {% if message %}
-    <p style="color: green;">{{ message }}</p>
-    {% endif %}
+{% block title %}Hantera Användare{% endblock %}
 
-    {% if error %}
-    <p style="color: red;">{{ error }}</p>
-    {% endif %}
+{% block content %}
+
+<meta charset="UTF-8">
+<title>Användare</title>
+
+
+<h1>Användare</h1>
+
+{% if message %}
+<p class="message-success">{{ message }}</p>
+{% endif %}
+
+{% if error %}
+<p class="message-error">{{ error }}</p>  
+{% endif %}
 
     <!-- skapa users -->
     <h2>Skapa användare</h2>
 
     <form method="post" action="/ui/users">
         <input type="text" name="name" placeholder="Namn">
-        <button type="submit">Skapa</button>
+        <button type="submit" class="btn">Skapa</button>
     </form>
 
     <hr>
@@ -29,7 +32,7 @@
     <!-- lista users -->
     <h2>Befintliga användare</h2>
 
-    <table border="1" cellpadding="6" cellspacing="0">
+    <table class="table">
         <tr>
             <th>ID</th>
             <th>Namn</th>
@@ -42,8 +45,8 @@
             <td>{{ u.name }}</td>
             <td>
                 <form method="post" action="/ui/users/{{ u.id }}/delete">
-                    <button type="submit"
-                            onclick="return confirm('Ta bort användaren {{ u.name }}?');">
+                    <button type="submit" class="btn btn-danger" 
+					onclick="return confirm('Ta bort användaren {{ u.name }}?');">
                         Ta bort
                     </button>
                 </form>
@@ -51,6 +54,6 @@
         </tr>
         {% endfor %}
     </table>
-<p><a href="/ui">Tillbaka</a></p>
-</body>
-</html>
+<p><a <p><a href="/ui" class="btn">Tillbaka</a></p>
+
+{% endblock %}
