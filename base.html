@@ -1,1 +1,23 @@
 
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Hållbarhetskollen{% endblock %}</title>
+
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+    <div class="navbar">
+        <a href="/ui">Hem</a>
+        <a href="/ui/users">Hantera Användare</a>
+        <a href="/ui/activities">Activities</a>
+        <a href="/ui/reports/weekly">Weekly Report</a>
+    </div>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+</body>
+</html>
