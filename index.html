@@ -1,20 +1,18 @@
-<!DOCTYPE html>
-<html lang="sv">
-<head>
-    <meta charset="UTF-8">
-    <title>Start</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-    <h1>Laboration 3</h1>
+{% block title %}Start{% endblock %}
 
-    <ul>
-        <li><a href="/ui/users">Hantera användare</a></li>
-        <li><a href="/docs">Swagger</a></li>
-		<li><a href="/ui/activities">Activities</a></li>
-		<li><a href="/ui/reports/weekly">Weekly Report</a></li>
-		<br>
-    </ul>
+{% block content %}
 
-</body>
-</html>
+<meta charset="UTF-8">
+   
+<h1>Laboration 3</h1>
+
+ <ul>
+	<li><a href="/ui/users">Hantera användare</a></li>
+	<li><a href="/docs">Swagger</a></li>
+	<li><a href="/ui/activities">Activities</a></li>
+	<li><a href="/ui/reports/weekly">Weekly Report</a></li>
+</ul>
+
+{% endblock %}
