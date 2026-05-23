@@ -1,59 +1,61 @@
-
 {% extends "base.html" %}
-
-{% block title %}Hantera Användare{% endblock %}
 
 {% block content %}
 
-<meta charset="UTF-8">
-<title>Användare</title>
+<section class="page-section">
+    <h2>Användare</h2>
 
+    {% if message %}
+        <div class="message-success">{{ message }}</div>
+    {% endif %}
 
-<h1>Användare</h1>
+    {% if error %}
+        <div class="message-error">{{ error }}</div>
+    {% endif %}
 
-{% if message %}
-<p class="message-success">{{ message }}</p>
-{% endif %}
+    <div class="card">
+        <h3>Skapa användare</h3>
 
-{% if error %}
-<p class="message-error">{{ error }}</p>  
-{% endif %}
+        <form method="post" action="/ui/users">
+            <label for="name">Namn</label>
+            <input type="text" id="name" name="name">
 
-    <!-- skapa users -->
-    <h2>Skapa användare</h2>
+            <button type="submit" class="btn">Skapa</button>
+        </form>
+    </div>
 
-    <form method="post" action="/ui/users">
-        <input type="text" name="name" placeholder="Namn">
-        <button type="submit" class="btn">Skapa</button>
-    </form>
+    <div class="card">
+        <h3>Befintliga användare</h3>
 
-    <hr>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Namn</th>
+                    <th>Åtgärd</th>
+                </tr>
+            </thead>
 
-    <!-- lista users -->
-    <h2>Befintliga användare</h2>
-
-    <table class="table">
-        <tr>
-            <th>ID</th>
-            <th>Namn</th>
-            <th>Åtgärd</th>
-        </tr>
-
-        {% for u in users %}
-        <tr>
-            <td>{{ u.id }}</td>
-            <td>{{ u.name }}</td>
-            <td>
-                <form method="post" action="/ui/users/{{ u.id }}/delete">
-                    <button type="submit" class="btn btn-danger" 
-					onclick="return confirm('Ta bort användaren {{ u.name }}?');">
-                        Ta bort
-                    </button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-<p><a <p><a href="/ui" class="btn">Tillbaka</a></p>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.id }}</td>
+                    <td>{{ u.name }}</td>
+                    <td>
+                        <form method="post" action="/ui/users/{{ u.id }}/delete">
+                            <button 
+                                type="submit" 
+                                class="btn btn-danger"
+                                onclick="return confirm('Ta bort användaren {{ u.name }}?');">
+                                Ta bort
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
 
 {% endblock %}
