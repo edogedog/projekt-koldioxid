@@ -1,36 +1,35 @@
 {% extends "base.html" %}
 
 {% block content %}
+<section class="page-section">
+    <h2>Veckorapport</h2>
 
-<h1>Veckorapport</h1>
+    {% if error %}
+        <p class="message-error">{{ error }}</p>
+    {% endif %}
 
-<form method="get" action="/ui/reports/weekly">
+    {% if total is not none %}
+        <p class="message-success">Total CO₂e för veckan: {{ total }}</p>
+    {% endif %}
 
-    <label for="user_id">Användare:</label>
-    <select name="user_id" id="user_id" required>
-        {% for user in users %}
-        <option value="{{ user.id }}">
-            {{ user.name }}
-        </option>
-        {% endfor %}
-    </select>
+    <div class="card">
+        <h3>Visa rapport</h3>
 
-    <label for="week_start">Veckostart (måndag):</label>
-    <input type="date" name="week_start" id="week_start" required>
+        <form method="get" action="/ui/reports/weekly" class="weekly-form">
+            <label for="user_id">Användare</label>
+            <select id="user_id" name="user_id">
+                {% for u in users %}
+                    <option value="{{ u.id }}">{{ u.name }}</option>
+                {% endfor %}
+            </select>
 
-    <button type="submit">Visa rapport</button>
+            <label for="week_start">Veckostart måndag</label>
 
-</form>
-
-{% if err %}
-<p class="error">{{ err }}</p>
-{% endif %}
-
-{% if total is not none %}
-<div class="report-box">
-    <h2>Resultat</h2>
-    <p>Total CO₂e för veckan: <strong>{{ total }}</strong> kg</p>
-</div>
-{% endif %}
-
+            <div class="form-row">
+                <input type="date" id="week_start" name="week_start">
+                <button type="submit" class="btn">Visa rapport</button>
+            </div>
+        </form>
+    </div>
+</section>
 {% endblock %}
