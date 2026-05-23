@@ -4,12 +4,8 @@
 <section class="page-section">
     <h2>Veckorapport</h2>
 
-    {% if error %}
-        <p class="message-error">{{ error }}</p>
-    {% endif %}
-
-    {% if total is not none %}
-        <p class="message-success">Total CO₂e för veckan: {{ total }}</p>
+    {% if err %}
+        <p class="message-error">{{ err }}</p>
     {% endif %}
 
     <div class="card">
@@ -17,19 +13,39 @@
 
         <form method="get" action="/ui/reports/weekly" class="weekly-form">
             <label for="user_id">Användare</label>
-            <select id="user_id" name="user_id">
+            <select id="user_id" name="user_id" required>
+                <option value="">Välj användare</option>
                 {% for u in users %}
-                    <option value="{{ u.id }}">{{ u.name }}</option>
+                    <option value="{{ u.id }}"
+                        {% if selected_user_id == u.id %}selected{% endif %}>
+                        {{ u.name }}
+                    </option>
                 {% endfor %}
             </select>
 
             <label for="week_start">Veckostart måndag</label>
 
             <div class="form-row">
-                <input type="date" id="week_start" name="week_start">
-                <button type="submit" class="btn">Visa rapport</button>
+                <input 
+                    type="date" 
+                    id="week_start" 
+                    name="week_start" 
+                    value="{{ selected_week_start or '' }}"
+                    required
+                >
+                <button type="submit" class="btn">Sök</button>
             </div>
         </form>
     </div>
+
+    {% if total is not none %}
+        <div class="card">
+            <h3>Resultat</h3>
+            <p class="message-success">
+                Total CO₂e för vald användare under veckan:
+                <strong>{{ "%.2f"|format(total) }}</strong> kg
+            </p>
+        </div>
+    {% endif %}
 </section>
 {% endblock %}
