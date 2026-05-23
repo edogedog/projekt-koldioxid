@@ -1,23 +1,30 @@
-
 <!DOCTYPE html>
+<html lang="sv">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}Hållbarhetskollen{% endblock %}</title>
-
+    <title>CO₂e Dashboard</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 
-    <div class="navbar">
-        <a href="/ui">Hem</a>
-        <a href="/ui/users">Hantera Användare</a>
-        <a href="/ui/activities">Activities</a>
-        <a href="/ui/reports/weekly">Weekly Report</a>
-    </div>
+    <header>
+        <h1 class="page-header">CO₂e Dashboard</h1>
+        <p class="page-subheader">
+            Logga vardagsaktiviteter och följ användares CO₂e per vecka
+        </p>
+    </header>
+
+    <nav class="navbar">
+		<a href="/docs">Dashboard</a>
+        <a href="/ui/users">Användare</a>
+        <a href="/ui/activities">Aktiviteter</a>
+        <a href="/ui/reports/weekly">Veckorapport</a>
+    </nav>
 
     <main>
         {% block content %}
         {% endblock %}
     </main>
+
 </body>
 </html>
