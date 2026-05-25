@@ -27,23 +27,23 @@
                 </select>
 
                 <label for="categorySelect">Kategori</label>
-                <select name="category" id="categorySelect" required>
+                <select name="category" id="categorySelect">
                     <option value="">Välj kategori</option>
                 </select>
 
                 <label for="keySelect">Nyckel</label>
-                <select name="key" id="keySelect" required>
+                <select name="key" id="keySelect">
                     <option value="">Välj nyckel</option>
                 </select>
 
                 <label for="amount">Mängd</label>
                 <div>
-                    <input id="amount" name="amount" type="number" step="0.01" min="0.01" required>
+                    <input id="amount" name="amount" type="number" step="0.01" min="0.01">
                     <span id="unitText"></span>
                 </div>
 
                 <label for="date">Datum</label>
-                <input id="date" name="date" type="date" required>
+                <input id="date" name="date" type="date">
 
                 <button type="submit" class="btn">Spara</button>
             </form>
@@ -75,7 +75,7 @@
                 {% for a in activities %}
                 <tr>
                     <td>{{ a.id }}</td>
-                    <td>{{ a.user_id }}</td>
+                    <td>{{ a.user.name }}</td>
                     <td>{{ a.category }}</td>
                     <td>{{ a.key }}</td>
                     <td>{{ a.amount }}</td>
