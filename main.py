@@ -221,7 +221,24 @@ def ui_create_user(
                 "error": "Name får inte vara tomt.",
             },
         )
-
+        
+    otillatna_tecken = []
+    for tecken in name:
+        if not (tecken.isalpha() or tecken.isspace()):
+            otillatna_tecken.append(tecken)
+    
+    if otillatna_tecken:
+        unika_otillatna = list(set(otillatna_tecken))
+        return templates.TemplateResponse(
+            request,
+            "create_user.html",
+            {
+                "users": users,
+                "message": None,
+                "error": f"Namn får endast innehålla bokstäver och mellanslag",
+            },
+        )
+    
     user = User(name=name.strip())
     db.add(user)
     db.commit()
