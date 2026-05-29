@@ -218,10 +218,11 @@ def ui_create_user(
             {
                 "users": users,
                 "message": None,
-                "error": "Name får inte vara tomt.",
+                "error": "Namn får inte vara tomt.",
             },
         )
         
+                
     otillatna_tecken = []
     for tecken in name:
         if not (tecken.isalpha() or tecken.isspace()):
@@ -239,6 +240,7 @@ def ui_create_user(
             },
         )
     
+
     user = User(name=name.strip())
     db.add(user)
     db.commit()
@@ -250,7 +252,7 @@ def ui_create_user(
         "create_user.html",
         {
             "users": users,
-            "message": "User skapad.",
+            "message": "Användare skapad.",
             "error": None,
         },
     )
@@ -275,7 +277,7 @@ def ui_delete_user(
         "create_user.html",
         {
             "users": users,
-            "message": "User borttagen.",
+            "message": "Användare borttagen.",
             "error": None,
         },
     )
@@ -367,7 +369,7 @@ def ui_create_activity(
             "users": users,
             "activities": activities,
             "factors": factors,
-            "message": f"Loggad aktivitet för: {user.name if user else user_id}",
+            "message": f"Loggad aktivitet för: {user.name}",
             "error": None,
         },
     )
